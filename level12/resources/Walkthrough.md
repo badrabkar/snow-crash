@@ -45,4 +45,22 @@ n(t(param("x"), param("y")));
 
 
 ![alt text](image-5.png)
+
+
+the **=~** operator is known as the binding operator. Its primary purpose is to associate a string with a regular expression operation
+
+```perl
+    my $string = "hello world";
+    if ($string =~ /world/) {
+        print "String contains 'world'\n";
+    }
+```
+
+
+
 ## Cracking process
+
+
+
+
+and we got the password for the next level: `g1qKMiRpXf53AWhDaU7FEkczr`
