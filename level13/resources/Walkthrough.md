@@ -58,3 +58,60 @@ Since `cmp eax, 0x1092` checks if UID == 4242, forcing eax=4242 ensures the cond
 
 and we got the password for the next level `2A31L79asukciNyi8uppkEuSx`
 
+
+
+<!-- ![alt text](image.png) -->
+
+
+<!-- ```c
+void main() {
+    &saved_fp = &saved_fp & 0xfffffff0;
+    if (getuid() != 0x1092) {
+            printf("UID %d started us but we we expect %d\n", getuid(), 0x1092);
+            exit(0x1);
+    }
+    printf("your token is %s\n", ft_des("boe]!ai0FB@.:|L6l@A?>qJ}I"));
+    return;
+}
+``` -->
+
+```c
+int ft_des(int arg0) {
+    var_C = strdup(arg_0);
+    var_18 = 0x0;
+    var_1C = 0x0;
+    do {
+            ecx = 0xffffffff;
+            asm { repne scasb al, byte [edi] };
+            if (!ecx - 0x1 <= var_1C) {
+                break;
+            }
+            if (var_18 == 0x6) {
+                    var_18 = 0x0;
+            }
+            if ((var_1C & 0x1) != 0x0) {
+                    for (var_14 = 0x0; sign_extend_32(*(int8_t *)(var_18 + 0x80486c0) & 0xff) > var_14; var_14 = var_14 + 0x1) {
+                            *(int8_t *)(var_1C + var_C) = (*(int8_t *)(var_1C + var_C) & 0xff) + 0x1;
+                            if ((*(int8_t *)(var_1C + var_C) & 0xff) == 0x7f) {
+                                    *(int8_t *)(var_1C + var_C) = 0x20;
+                            }
+                    }
+            }
+            else {
+                    if ((var_1C & 0x1) == 0x0) {
+                            for (var_10 = 0x0; sign_extend_32(*(int8_t *)(var_18 + 0x80486c0) & 0xff) > var_10; var_10 = var_10 + 0x1) {
+                                    *(int8_t *)(var_1C + var_C) = (*(int8_t *)(var_1C + var_C) & 0xff) - 0x1;
+                                    if ((*(int8_t *)(var_1C + var_C) & 0xff) == 0x1f) {
+                                            *(int8_t *)(var_1C + var_C) = 0x7e;
+                                    }
+                            }
+                    }
+            }
+            var_1C = var_1C + 0x1;
+            var_18 = var_18 + 0x1;
+    } while (true);
+    eax = var_C;
+    return eax;
+}
+
+```
